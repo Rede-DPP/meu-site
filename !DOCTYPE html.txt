@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Fotos do Evento</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            max-width: 100%;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h2>Envie sua foto e aplique o template do evento</h2>
+    <input type="file" id="upload" accept="image/*">
+    <br><br>
+    <canvas id="canvas"></canvas>
+    <br><br>
+    <button id="download">Baixar Imagem</button>
+
+    <script>
+        const upload = document.getElementById('upload');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const templateSrc = 'template.png'; // Substitua pelo caminho real do seu template
+        
+        const template = new Image();
+        template.src = templateSrc;
+        
+        upload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    
+                    // Quando o template carregar, sobrepõe na imagem
+                    template.onload = function() {
+                        ctx.drawImage(template, 0, 0, img.width, img.height);
+                    };
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('download').addEventListener('click', function() {
+            const link = document.createElement('a');
+            link.download = 'foto_evento.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>
