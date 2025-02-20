@@ -58,42 +58,47 @@
             console.log("Modelos carregados!");
         }
 
+        async function processImage(img) {
+            // Define tamanho do canvas com base no template
+            canvas.width = template.width;
+            canvas.height = template.height;
+
+            // Detecta rosto
+            const detections = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions());
+            if (!detections) {
+                alert("Nenhum rosto detectado. Tente outra imagem.");
+                return;
+            }
+
+            // Obtém posição e tamanho do rosto
+            const { x, y, width, height } = detections.box;
+
+            // Define onde o rosto será posicionado no template
+            const faceTargetWidth = canvas.width * 0.3;
+            const faceTargetHeight = (height / width) * faceTargetWidth;
+            const faceX = canvas.width * 0.35;
+            const faceY = canvas.height * 0.2;
+
+            // Primeiro desenha o template
+            ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
+
+            // Depois adiciona o rosto
+            ctx.drawImage(img, x, y, width, height, faceX, faceY, faceTargetWidth, faceTargetHeight);
+        }
+
         upload.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = async function(e) {
+            reader.onload = function(e) {
                 const img = new Image();
-                img.onload = async function() {
-                    // Define o tamanho do canvas com base no template
-                    template.onload = async function() {
-                        canvas.width = template.width;
-                        canvas.height = template.height;
-
-                        // Desenha o template primeiro
-                        ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
-
-                        // Detecta o rosto na imagem
-                        const detections = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions());
-
-                        if (!detections) {
-                            alert("Nenhum rosto detectado. Tente outra imagem.");
-                            return;
-                        }
-
-                        // Obtém as coordenadas do rosto
-                        const { x, y, width, height } = detections.box;
-
-                        // Define tamanho e posição do rosto no template
-                        const faceTargetWidth = canvas.width * 0.3;
-                        const faceTargetHeight = (height / width) * faceTargetWidth;
-                        const faceX = canvas.width * 0.35;
-                        const faceY = canvas.height * 0.2;
-
-                        // Desenha o rosto no template
-                        ctx.drawImage(img, x, y, width, height, faceX, faceY, faceTargetWidth, faceTargetHeight);
-                    };
+                img.onload = function() {
+                    if (template.complete) {
+                        processImage(img); // Só processa quando o template já estiver carregado
+                    } else {
+                        template.onload = () => processImage(img);
+                    }
                 };
                 img.src = e.target.result;
             };
