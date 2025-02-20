@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de Selfie do Evento</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
     <style>
         body {
             text-align: center;
@@ -11,11 +12,6 @@
             background: linear-gradient(135deg, #fde992, #f7a800);
             color: #2d501e;
             padding: 20px;
-        }
-        h2 {
-            font-size: 24px;
-            font-weight: bold;
-            color: #5a8b2d;
         }
         .container {
             background: #fff;
@@ -33,29 +29,11 @@
             border: none;
             cursor: pointer;
         }
-        input {
-            background: #5a8b2d;
-            color: white;
-        }
-        button {
-            background: #f7a800;
-            color: white;
-            font-weight: bold;
-        }
-        button:hover {
-            background: #e69500;
-        }
         canvas {
             max-width: 100%;
             border: 2px solid #5a8b2d;
             border-radius: 10px;
             margin-top: 15px;
-        }
-        .preview {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
         }
     </style>
 </head>
@@ -63,9 +41,7 @@
     <h2>Transforme sua Selfie com o Template do Evento!</h2>
     <div class="container">
         <input type="file" id="upload" accept="image/*">
-        <div class="preview">
-            <canvas id="canvas"></canvas>
-        </div>
+        <canvas id="canvas"></canvas>
         <br>
         <button id="download">Baixar Selfie</button>
     </div>
@@ -75,31 +51,38 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const template = new Image();
-        template.src = 'template_V_CBDPP.png';
+        template.src = 'template_V_CBDPP.png'; // Template do evento
 
-        upload.addEventListener('change', (event) => {
+        async function loadModels() {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
+        }
+
+        upload.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) return;
-            
+
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const img = new Image();
-                img.onload = function() {
-                    const maxSize = 500;
-                    const scaleFactor = Math.min(maxSize / img.width, maxSize / img.height);
-                    const newWidth = img.width * scaleFactor;
-                    const newHeight = img.height * scaleFactor;
+                img.onload = async function() {
+                    // Define o tamanho do canvas
+                    canvas.width = template.width || img.width;
+                    canvas.height = template.height || img.height;
                     
-                    canvas.width = newWidth;
-                    canvas.height = newHeight;
-                    ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                    // Detecta o rosto na imagem
+                    const detections = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions());
                     
-                    template.onload = function() {
-                        ctx.drawImage(template, 0, 0, newWidth, newHeight);
-                    };
-                    if (template.complete) {
-                        ctx.drawImage(template, 0, 0, newWidth, newHeight);
+                    if (!detections) {
+                        alert("Nenhum rosto detectado. Tente outra imagem.");
+                        return;
                     }
+
+                    // Obtém as coordenadas do rosto
+                    const { x, y, width, height } = detections.box;
+
+                    // Recorta e redesenha o rosto no template
+                    ctx.drawImage(template, 0, 0, canvas.width, canvas.height); // Aplica template
+                    ctx.drawImage(img, x, y, width, height, canvas.width * 0.35, canvas.height * 0.2, canvas.width * 0.3, canvas.height * 0.4);
                 };
                 img.src = e.target.result;
             };
@@ -112,6 +95,8 @@
             link.href = canvas.toDataURL('image/png');
             link.click();
         });
+
+        loadModels();
     </script>
 </body>
 </html>
