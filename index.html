@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Fotos do Evento</title>
+    <title>Gerador de Selfie do Evento</title>
     <style>
         body {
             text-align: center;
@@ -51,16 +51,23 @@
             border-radius: 10px;
             margin-top: 15px;
         }
+        .preview {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
     </style>
 </head>
 <body>
-    <h2>Envie sua foto e aplique o template do evento</h2>
+    <h2>Transforme sua Selfie com o Template do Evento!</h2>
     <div class="container">
         <input type="file" id="upload" accept="image/*">
-        <br><br>
-        <canvas id="canvas"></canvas>
-        <br><br>
-        <button id="download">Baixar Imagem</button>
+        <div class="preview">
+            <canvas id="canvas"></canvas>
+        </div>
+        <br>
+        <button id="download">Baixar Selfie</button>
     </div>
 
     <script>
@@ -78,15 +85,20 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    const maxSize = 500;
+                    const scaleFactor = Math.min(maxSize / img.width, maxSize / img.height);
+                    const newWidth = img.width * scaleFactor;
+                    const newHeight = img.height * scaleFactor;
+                    
+                    canvas.width = newWidth;
+                    canvas.height = newHeight;
+                    ctx.drawImage(img, 0, 0, newWidth, newHeight);
                     
                     template.onload = function() {
-                        ctx.drawImage(template, 0, 0, img.width, img.height);
+                        ctx.drawImage(template, 0, 0, newWidth, newHeight);
                     };
                     if (template.complete) {
-                        ctx.drawImage(template, 0, 0, img.width, img.height);
+                        ctx.drawImage(template, 0, 0, newWidth, newHeight);
                     }
                 };
                 img.src = e.target.result;
@@ -96,7 +108,7 @@
 
         document.getElementById('download').addEventListener('click', function() {
             const link = document.createElement('a');
-            link.download = 'foto_evento.png';
+            link.download = 'selfie_evento.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
         });
