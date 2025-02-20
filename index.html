@@ -27,11 +27,15 @@
         const upload = document.getElementById('upload');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const templateSrc = 'template_V_CBDPP.png'; // Substitua pelo caminho real do seu template
-        
+
         const template = new Image();
-        template.src = templateSrc;
-        
+        template.src = 'template_V_CBDPP.png'; // Caminho do template
+        let templateLoaded = false;
+
+        template.onload = function() {
+            templateLoaded = true;
+        };
+
         upload.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
@@ -40,14 +44,24 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0, img.width, img.height);
-                    
-                    // Quando o template carregar, sobrepõe na imagem
-                    template.onload = function() {
-                        ctx.drawImage(template, 0, 0, img.width, img.height);
-                    };
+                    if (!templateLoaded) {
+                        alert('O template ainda está carregando. Tente novamente em alguns segundos.');
+                        return;
+                    }
+
+                    // Ajusta o canvas para o tamanho do template
+                    canvas.width = template.width;
+                    canvas.height = template.height;
+
+                    // Ajusta a imagem carregada para cobrir o canvas corretamente
+                    const scale = Math.max(template.width / img.width, template.height / img.height);
+                    const newWidth = img.width * scale;
+                    const newHeight = img.height * scale;
+                    const xOffset = (template.width - newWidth) / 2;
+                    const yOffset = (template.height - newHeight) / 2;
+
+                    ctx.drawImage(img, xOffset, yOffset, newWidth, newHeight);
+                    ctx.drawImage(template, 0, 0, template.width, template.height);
                 };
                 img.src = e.target.result;
             };
@@ -57,7 +71,7 @@
         document.getElementById('download').addEventListener('click', function() {
             const link = document.createElement('a');
             link.download = 'foto_evento.png';
-            link.href = canvas.toDataURL();
+            link.href = canvas.toDataURL('image/png');
             link.click();
         });
     </script>
