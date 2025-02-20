@@ -51,7 +51,7 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const template = new Image();
-        template.src = 'template_V_CBDPP.png'; // Template do evento
+        template.src = 'template_V_CBDPP.png'; // Caminho do template do evento
 
         async function loadModels() {
             await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/models');
@@ -66,35 +66,34 @@
             reader.onload = async function(e) {
                 const img = new Image();
                 img.onload = async function() {
-                    // Define o tamanho do canvas
-                    canvas.width = template.width || 600;
-                    canvas.height = template.height || 600;
-                    
-                    // Desenha o template
-                    ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
-                    
-                    // Detecta o rosto na imagem
-                    const inputSize = 512;
-                    const detections = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize }));
+                    // Define o tamanho do canvas com base no template
+                    template.onload = async function() {
+                        canvas.width = template.width;
+                        canvas.height = template.height;
 
-                    if (!detections) {
-                        alert("Nenhum rosto detectado. Tente outra imagem.");
-                        return;
-                    }
+                        // Desenha o template primeiro
+                        ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
 
-                    // Obtém as coordenadas do rosto
-                    const { x, y, width, height } = detections.box;
+                        // Detecta o rosto na imagem
+                        const detections = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions());
 
-                    // Ajusta o tamanho do rosto para encaixar no template
-                    const faceTargetWidth = canvas.width * 0.3;
-                    const faceTargetHeight = (height / width) * faceTargetWidth;
+                        if (!detections) {
+                            alert("Nenhum rosto detectado. Tente outra imagem.");
+                            return;
+                        }
 
-                    // Posiciona o rosto na área desejada do template
-                    const faceX = canvas.width * 0.35;
-                    const faceY = canvas.height * 0.2;
+                        // Obtém as coordenadas do rosto
+                        const { x, y, width, height } = detections.box;
 
-                    // Recorta e coloca o rosto no template
-                    ctx.drawImage(img, x, y, width, height, faceX, faceY, faceTargetWidth, faceTargetHeight);
+                        // Define tamanho e posição do rosto no template
+                        const faceTargetWidth = canvas.width * 0.3;
+                        const faceTargetHeight = (height / width) * faceTargetWidth;
+                        const faceX = canvas.width * 0.35;
+                        const faceY = canvas.height * 0.2;
+
+                        // Desenha o rosto no template
+                        ctx.drawImage(img, x, y, width, height, faceX, faceY, faceTargetWidth, faceTargetHeight);
+                    };
                 };
                 img.src = e.target.result;
             };
