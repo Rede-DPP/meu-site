@@ -7,34 +7,68 @@
     <style>
         body {
             text-align: center;
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #fde992, #f7a800);
+            color: #2d501e;
+            padding: 20px;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #5a8b2d;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            max-width: 90%;
+        }
+        input, button {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+        input {
+            background: #5a8b2d;
+            color: white;
+        }
+        button {
+            background: #f7a800;
+            color: white;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #e69500;
         }
         canvas {
             max-width: 100%;
-            border: 1px solid #ddd;
+            border: 2px solid #5a8b2d;
+            border-radius: 10px;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
     <h2>Envie sua foto e aplique o template do evento</h2>
-    <input type="file" id="upload" accept="image/*">
-    <br><br>
-    <canvas id="canvas"></canvas>
-    <br><br>
-    <button id="download">Baixar Imagem</button>
+    <div class="container">
+        <input type="file" id="upload" accept="image/*">
+        <br><br>
+        <canvas id="canvas"></canvas>
+        <br><br>
+        <button id="download">Baixar Imagem</button>
+    </div>
 
     <script>
         const upload = document.getElementById('upload');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-
         const template = new Image();
-        template.src = 'template_V_CBDPP.png'; // Caminho do template
-        let templateLoaded = false;
-
-        template.onload = function() {
-            templateLoaded = true;
-        };
+        template.src = 'template_V_CBDPP.png';
 
         upload.addEventListener('change', (event) => {
             const file = event.target.files[0];
@@ -44,24 +78,16 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    if (!templateLoaded) {
-                        alert('O template ainda está carregando. Tente novamente em alguns segundos.');
-                        return;
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    
+                    template.onload = function() {
+                        ctx.drawImage(template, 0, 0, img.width, img.height);
+                    };
+                    if (template.complete) {
+                        ctx.drawImage(template, 0, 0, img.width, img.height);
                     }
-
-                    // Ajusta o canvas para o tamanho do template
-                    canvas.width = template.width;
-                    canvas.height = template.height;
-
-                    // Ajusta a imagem carregada para cobrir o canvas corretamente
-                    const scale = Math.max(template.width / img.width, template.height / img.height);
-                    const newWidth = img.width * scale;
-                    const newHeight = img.height * scale;
-                    const xOffset = (template.width - newWidth) / 2;
-                    const yOffset = (template.height - newHeight) / 2;
-
-                    ctx.drawImage(img, xOffset, yOffset, newWidth, newHeight);
-                    ctx.drawImage(template, 0, 0, template.width, template.height);
                 };
                 img.src = e.target.result;
             };
